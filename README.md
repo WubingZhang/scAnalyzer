@@ -25,7 +25,7 @@ $ conda install -c conda-forge r-rjags
 ### Installation using R
 ~~~
 > install.packages("BiocManager", repos = "https://cloud.r-project.org")
-> BiocManager::install(c("Seurat", "ggplot2", "dplyr", "infercnv", "SingleR", "celldex", "scmap", "navinlabcode/copykat", "chris-mcginnis-ucsf/DoubletFinder", "bm2-lab/scLearn"))
+> BiocManager::install(c("Seurat", "ggplot2", "dplyr", "presto", "infercnv", "SingleR", "celldex", "scmap", "navinlabcode/copykat", "chris-mcginnis-ucsf/DoubletFinder", "bm2-lab/scLearn"))
 > BiocManager::install("WubingZhang/scAnalyzer")
 ~~~
 

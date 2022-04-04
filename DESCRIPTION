@@ -20,6 +20,6 @@ Suggests: BiocStyle,
           celldex,
           SingleR,
           copykat,
-          scmap
+          scmap,
           presto
 NeedsCompilation: no
