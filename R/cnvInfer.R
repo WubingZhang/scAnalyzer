@@ -8,7 +8,7 @@
 #' @param ann.column An integer or a character specifying the cell cluster column in the seurat meta.data.
 #' @param normal_groups A vector specifying the groups of normal cells, which mush match the name shown in meta.data.
 #' @param methods copykat, infercnv, numbat
-#' @param outdir path to the output directory
+#' @param outdir path to output intermediate results.
 #' @param gene_order_file path to the gene order file (required for infercnv); using geneorder_hg20 by default.
 #'
 #' @author Wubing Zhang
@@ -46,6 +46,8 @@ cnvInfer <- function(SeuratObj,
     }
     pred <- data.frame(copykat_res$prediction)
     SeuratObj@meta.data$copykat = pred[rownames(SeuratObj@meta.data), "copykat.pred"]
+
+    ## Visualize the copykat prediction
   }
 
   if("infercnv" %in% tolower(methods)){
@@ -64,6 +66,9 @@ cnvInfer <- function(SeuratObj,
                                          ref_group_names = normal_groups)
     infercnv_obj <- infercnv::run(infercnv_obj, cutoff=0.1, out_dir=outdir, cluster_by_groups=TRUE, denoise=TRUE, HMM=TRUE)
     SeuratObj <- add_to_seurat(SeuratObj, outdir, top_n = 10, bp_tolerance = 2000000)
+
+    ## Visualize the infercnv prediction
+
   }
   if("numbat" %in% tolower(methods)){
     ## Add here
