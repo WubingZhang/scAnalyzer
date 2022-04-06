@@ -65,9 +65,43 @@ cnvInfer <- function(SeuratObj,
                                          annotations_file=paste0(outdir, "/annotation_for_infercnv.txt"),
                                          ref_group_names = normal_groups)
     infercnv_obj <- infercnv::run(infercnv_obj, cutoff=0.1, out_dir=outdir, cluster_by_groups=TRUE, denoise=TRUE, HMM=TRUE)
-    SeuratObj <- add_to_seurat(SeuratObj, outdir, top_n = 10, bp_tolerance = 2000000)
+
+    require(dplyr)
+    require(EnvStats)
+
+    ref_file <- paste0(out_dir, '/infercnv.references.txt')
+    obs_file <- paste0(out_dir, '/infercnv.observations.txt')
+    ref <- read.csv(ref_file, header=T, sep = ' ', row.names = 1)
+    obs <- read.csv(obs_file, header=T, sep = ' ', row.names = 1)
+
+    ref_var <- mean(as.numeric(ref %>% summarise_if(is.numeric, var)))
+
+    df <- data.frame()
+    for (cell in colnames(obs)) {
+      cell_var <- var(obs[, cell])
+      if (var(obs[, cell]) == 0) {
+        p_value <- 1
+        type <- "N"
+      }else {
+        test_result <- varTest(obs[, cell], alternative = "greater", sigma.squared = ref_var)
+
+        # Bonferroni adjusted p-value
+        p_value <- min(test_result$p.value * ncol(obs), 1)
+        if (p_value <= 0.05) {
+          type <- "T"
+        }else {
+          type <- "N"
+        }
+      }
+
+      df <- rbind(df, data.frame("cell" = gsub("\\.", "-", cell), "var" = cell_var, "p" = p_value, "type" = type))
+    }
+    row.names(df) <- df[["cell"]]
+    SeuratObj@meta.data$infercnv = df[rownames(SeuratObj@meta.data), "type"]
+    SeuratObj@meta.data$infercnv[is.na(SeuratObj@meta.data$infercnv)] <- "N"
 
     ## Visualize the infercnv prediction
+    DimPlot(SeuratObj, group.by = "infercnv")
 
   }
   if("numbat" %in% tolower(methods)){
