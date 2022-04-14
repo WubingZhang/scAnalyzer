@@ -77,24 +77,19 @@ cnvInfer <- function(SeuratObj,
     ref_var <- mean(as.numeric(ref %>% summarise_if(is.numeric, var)))
 
     df <- data.frame()
-    for (cell in colnames(obs)) {
-      cell_var <- var(obs[, cell])
-      if (var(obs[, cell]) == 0) {
-        p_value <- 1
-        type <- "N"
-      }else {
-        test_result <- varTest(obs[, cell], alternative = "greater", sigma.squared = ref_var)
+    for (cell in colnames(observation)) {
+      observation_var <- var(observation[, cell])
+      log_p <- pf(observation_var / reference_var, nrow(observation) - 1, nrow(reference) - 1, lower.tail = FALSE, log.p = TRUE)
 
-        # Bonferroni adjusted p-value
-        p_value <- min(test_result$p.value * ncol(obs), 1)
-        if (p_value <= 0.05) {
-          type <- "T"
-        }else {
-          type <- "N"
-        }
+      # Bonferroni adjusted p-value
+      adjusted_log_p <- min(log_p + log(ncol(observation)), 0)
+      if (adjusted_log_p <= log(0.05)) {
+        type <- "T"
+      } else {
+        type <- "N"
       }
 
-      df <- rbind(df, data.frame("cell" = gsub("\\.", "-", cell), "var" = cell_var, "p" = p_value, "type" = type))
+      df <- rbind(df, data.frame("cell" = cell, "var" = observation_var, "negative_log_p" = -adjusted_log_p, "type" = type))
     }
     row.names(df) <- df[["cell"]]
     SeuratObj@meta.data$infercnv = df[rownames(SeuratObj@meta.data), "type"]
