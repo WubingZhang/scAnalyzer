@@ -23,7 +23,7 @@ cnvInfer(
 
 \item{methods}{copykat, infercnv, numbat}
 
-\item{outdir}{path to the output directory}
+\item{outdir}{path to output intermediate results.}
 
 \item{gene_order_file}{path to the gene order file (required for infercnv); using geneorder_hg20 by default.}
 }

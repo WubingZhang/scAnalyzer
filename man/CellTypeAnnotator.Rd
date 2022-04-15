@@ -8,7 +8,7 @@
 CellTypeAnnotator(
   query.obj,
   clusters = "seurat_clusters",
-  method = c("singler", "sclearn", "scmap-cell", "seurat"),
+  method = c("scmap-cell", "seurat"),
   ref.data = NULL,
   ref.ann = NULL,
   plot = TRUE,

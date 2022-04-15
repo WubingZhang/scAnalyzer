@@ -57,8 +57,8 @@ cnvInfer <- function(SeuratObj,
     write.table(ann, paste0(outdir, "/annotation_for_infercnv.txt"),
                 sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
     if(is.null(gene_order_file)){
-      gene_order_file <- system.file("extdata", "geneorder_hg20.txt", package="scAnalyzer")
-      gene_order_file <- gzipfile(gene_order_file, "r")
+      gene_order_file <- system.file("extdata", "geneorder_hg20.txt.gz", package="scAnalyzer")
+      gene_order_file <- gzfile(gene_order_file, "r")
     }
     infercnv_obj <- CreateInfercnvObject(raw_counts_matrix = as.matrix(SeuratObj@assays$RNA@counts),
                                          gene_order_file = gene_order_file,

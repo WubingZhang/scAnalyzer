@@ -9,7 +9,7 @@ scAnalyzer(
   obj,
   project = NULL,
   analyses = c("qc", "doublet", "norm", "pca", "clustering"),
-  resolution = 0.1,
+  resolution = 0.5,
   outdir = NULL
 )
 }

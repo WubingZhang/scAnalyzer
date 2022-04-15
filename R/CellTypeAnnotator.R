@@ -19,12 +19,12 @@
 #'
 #' @examples
 #'
-#' @import Seurat SingleR celldex scLearn scmap
+#' @import Seurat SingleR celldex scLearn scmap SingleCellExperiment
 #' @export
 #'
 CellTypeAnnotator <- function(query.obj,
                               clusters = "seurat_clusters",
-                              method = c("singler", "sclearn", "scmap-cell", "seurat"),
+                              method = c("scmap-cell", "seurat"),
                               ref.data = NULL,
                               ref.ann = NULL,
                               plot = TRUE,
@@ -69,9 +69,9 @@ CellTypeAnnotator <- function(query.obj,
       query.obj[["singleR.score2"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[clusters]], rownames(pred.singleR)), 2]
       query.obj[["singleR.assign"]][query.obj[["singleR.score1"]]<0.3] = "Other"
     }else{
-      pred.singleR <- suppressWarnings(SingleR::SingleR(test = query.sce, clusters = query.obj[[]][[clusters]],
-                                           ref = ref.data, labels = ref.ann,
-                                           de.method = "wilcox"))
+      pred.singleR <- suppressWarnings(
+        SingleR::SingleR(test = query.sce, clusters = query.obj[[]][[clusters]],
+                         ref = ref.data, labels = ref.ann, de.method = "wilcox"))
       query.obj[["singleR.assign"]] <- pred.singleR$labels[match(query.obj[[]][[clusters]], rownames(pred.singleR))]
       query.obj[["singleR.score1"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[clusters]], rownames(pred.singleR)), 1]
       query.obj[["singleR.score2"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[clusters]], rownames(pred.singleR)), 2]
@@ -130,14 +130,15 @@ CellTypeAnnotator <- function(query.obj,
     }
   }
   if("scmap-cell" %in% tolower(method)){
-    requireNamespace("scmap") || stop("Please install scLearn")
+    requireNamespace("scmap") || stop("Please install scmap")
+    requireNamespace("SingleCellExperiment") || stop("Please install SingleCellExperiment")
     message(Sys.time(), " scmap-cell cell type annotation")
     set.seed(1)
-    ref.sce <- SingleCellExperiment(assays = list(normcounts = as.matrix(ref.data),
+    ref.sce <- SingleCellExperiment::SingleCellExperiment(assays = list(normcounts = as.matrix(ref.data),
                                                   logcounts = as.matrix(ref.data)),
                                     colData = DataFrame(label=ref.ann),
                                     rowData = DataFrame(feature_symbol=rownames(ref.data)))
-    query.sce <- as.SingleCellExperiment(query.obj)
+    query.sce <- Seurat::as.SingleCellExperiment(query.obj)
     rowData(query.sce) <- DataFrame(feature_symbol=rownames(query.obj))
 
     # feature_symbol column in the rowData slot
@@ -160,10 +161,11 @@ CellTypeAnnotator <- function(query.obj,
     }
   }
   if("scmap-cluster" %in% tolower(method)){
-    requireNamespace("scmap") || stop("Please install scLearn")
+    requireNamespace("scmap") || stop("Please install scmap")
+    requireNamespace("SingleCellExperiment") || stop("Please install SingleCellExperiment")
     message(Sys.time(), " scmap-cluster cell type annotation")
     set.seed(1)
-    ref.sce <- SingleCellExperiment(assays = list(normcounts = as.matrix(ref.data),
+    ref.sce <- SingleCellExperiment::SingleCellExperiment(assays = list(normcounts = as.matrix(ref.data),
                                                   logcounts = as.matrix(ref.data)),
                                     colData = DataFrame(label=ref.ann),
                                     rowData = DataFrame(feature_symbol=rownames(ref.data)))
