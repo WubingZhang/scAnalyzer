@@ -9,8 +9,9 @@ scAnalyzer(
   obj,
   project = NULL,
   analyses = c("qc", "doublet", "norm", "pca", "clustering"),
+  norm.method = c("LogNormalize", "SCTransform"),
   resolution = 0.5,
-  outdir = NULL
+  outdir = ""
 )
 }
 \arguments{
@@ -20,6 +21,8 @@ scAnalyzer(
 
 \item{analyses}{A character vector, specifying the type of analysis to perform, avaible analysis include qc,
 doublet, norm, pca, clustering, findmarker.}
+
+\item{norm.method}{LogNormalize or SCTransform.}
 
 \item{resolution}{The resolution for clustering. 0.1 by default.}
 

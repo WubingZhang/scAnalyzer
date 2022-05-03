@@ -8,6 +8,7 @@
 #' @param project A character, specifying the name of the project, which will be used in output file names.
 #' @param analyses A character vector, specifying the type of analysis to perform, avaible analysis include qc,
 #' doublet, norm, pca, clustering, findmarker.
+#' @param norm.method LogNormalize or SCTransform.
 #' @param resolution The resolution for clustering. 0.1 by default.
 #' @param outdir The path to output figures.
 #'
@@ -26,8 +27,9 @@
 
 scAnalyzer <- function(obj, project = NULL,
                        analyses = c("qc", "doublet", "norm", "pca", "clustering"),
+                       norm.method = c("LogNormalize", "SCTransform"),
                        resolution = 0.5,
-                       outdir = NULL){
+                       outdir = ""){
   requireNamespace("Seurat") || stop("Please install Seurat")
   requireNamespace("ggplot2") || stop("Please install ggplot2")
   requireNamespace("dplyr") || stop("Please install dplyr")
@@ -74,9 +76,13 @@ scAnalyzer <- function(obj, project = NULL,
       message(Sys.time(), " Remove doublets ...")
 
       # Identify cell clusters
-      obj <- NormalizeData(obj, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
-      obj <- FindVariableFeatures(obj, selection.method = "vst", nfeatures = 2000)
-      obj <- ScaleData(obj)
+      if(tolower(norm.method[1])=="sctransform"){
+        obj <- SCTransform(obj, method = "glmGamPoi", verbose = FALSE)
+      }else{
+        obj <- NormalizeData(obj, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
+        obj <- FindVariableFeatures(obj, selection.method = "vst", nfeatures = 2000)
+        obj <- ScaleData(obj)
+      }
       obj <- RunPCA(object = obj, features = VariableFeatures(object = obj), verbose = FALSE)
       obj <- FindNeighbors(object = obj, dims = 1:10, verbose = FALSE)
       obj <- FindClusters(object = obj, resolution = 0.1, algorithm = 1, verbose = FALSE)
@@ -115,10 +121,13 @@ scAnalyzer <- function(obj, project = NULL,
   #### Data normalization ####
   if("norm" %in% tolower(analyses)){
     message(Sys.time(), " Data normalization ...")
-    # obj <- SCTransform(obj, method = "glmGamPoi", verbose = FALSE)
-    obj <- NormalizeData(obj, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
-    obj <- FindVariableFeatures(obj, selection.method = "vst", nfeatures = 2000)
-    obj <- ScaleData(obj, features = rownames(obj))
+    if(tolower(norm.method[1])=="sctransform"){
+      obj <- SCTransform(obj, method = "glmGamPoi", return.only.var.genes = FALSE, verbose = FALSE)
+    }else{
+      obj <- NormalizeData(obj, normalization.method = "LogNormalize", scale.factor = 10000, verbose = FALSE)
+      obj <- FindVariableFeatures(obj, selection.method = "vst", nfeatures = 2000)
+      obj <- ScaleData(obj, features = rownames(obj))
+    }
     if(dir.exists(outdir)){
       p_vargene <- LabelPoints(plot = VariableFeaturePlot(obj), points = VariableFeatures(obj)[1:10], repel = TRUE)
       ggsave(plot = p_vargene, paste0(outdir, "/VarFeaturePlot_", Sys.Date(), ".pdf"), width = 8, height = 4)
@@ -129,7 +138,6 @@ scAnalyzer <- function(obj, project = NULL,
   if("pca" %in% tolower(analyses)){
     message(Sys.time(), " Dimention reduction ...")
     obj <- RunPCA(object = obj, features = VariableFeatures(object = obj), verbose = FALSE)
-    # Whether percent.mt is a major source of variance?
     if(dir.exists(outdir)){
       p_pc1 <- VizDimLoadings(obj, dims = 1:2, reduction = "pca")
       ggsave(plot = p_pc1, paste0(outdir, "/VizDimLoadingsPlot_PC1_PC2_", Sys.Date(), ".pdf"), width = 6.5, height = 4.5)
@@ -137,8 +145,8 @@ scAnalyzer <- function(obj, project = NULL,
       ggsave(plot = p_pc2, paste0(outdir, "/DimHeatmap_PC1-9_", Sys.Date(), ".pdf"), width = 11, height = 12)
       p_pc3 <- ElbowPlot(obj)
       ggsave(plot = p_pc3, paste0(outdir, "/ElbowPlot_", Sys.Date(), ".pdf"), width = 4.5, height = 3.5)
-      p_mito = FeaturePlot(obj, features = c("nFeature_RNA", "percent.mt"))
-      ggsave(plot = p_mito, paste0(outdir, "/FeaturePlot_QC_", Sys.Date(), ".pdf"), width = 7, height = 4)
+      # p_mito = FeaturePlot(obj, features = c("nFeature_RNA", "percent.mt"))
+      # ggsave(plot = p_mito, paste0(outdir, "/FeaturePlot_QC_", Sys.Date(), ".pdf"), width = 7, height = 4)
     }
   }
 
@@ -154,8 +162,8 @@ scAnalyzer <- function(obj, project = NULL,
     obj <- FindClusters(object = obj, resolution = resolution, algorithm = 1, verbose = FALSE)
     obj <- RunUMAP(obj, dims = PCs, verbose = FALSE)
     if(dir.exists(outdir)){
-      p_nfeat = FeaturePlot(obj, features = c("nFeature_RNA", "percent.mt"))
-      ggsave(plot = p_nfeat, paste0(outdir, "/FeaturePlot_nFeature_mtPercent_", Sys.Date(), ".pdf"), width = 12, height = 3.8)
+      # p_nfeat = FeaturePlot(obj, features = c("nFeature_RNA", "percent.mt"))
+      # ggsave(plot = p_nfeat, paste0(outdir, "/FeaturePlot_nFeature_mtPercent_", Sys.Date(), ".pdf"), width = 12, height = 3.8)
       p_umap <- DimPlot(obj, reduction = "umap", label=TRUE, label.size = 8)
       ggsave(plot = p_umap, paste0(outdir, "/UmapPlot_", Sys.Date(), ".pdf"), width = 6, height = 5)
     }

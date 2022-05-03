@@ -17,9 +17,5 @@ Suggests: BiocStyle,
           BiocManager,
           Seurat,
           DoubletFinder,
-          celldex,
-          SingleR,
-          copykat,
-          scmap,
           presto
 NeedsCompilation: no

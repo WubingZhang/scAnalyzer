@@ -19,7 +19,7 @@
 #'
 #' @examples
 #'
-#' @import Seurat SingleR celldex scLearn scmap SingleCellExperiment
+#' @import Seurat SingleCellExperiment
 #' @export
 #'
 CellTypeAnnotator <- function(query.obj,
@@ -42,11 +42,11 @@ CellTypeAnnotator <- function(query.obj,
 
   #### SingleR Cell type annotation ####
   if("singler" %in% tolower(method)){
-    requireNamespace("SingleR") || stop("Please install SingleR")
+    require("SingleR") || stop("Please install SingleR")
     message(Sys.time(), " SingleR cell type annotation")
     query.sce <- Seurat::as.SingleCellExperiment(query.obj)
     if(is.null(ref.data)){
-      requireNamespace("celldex") || stop("Please install celldex")
+      require("celldex") || stop("Please install celldex")
       ## Combine multiple references
       hpca <- celldex::HumanPrimaryCellAtlasData()
       Encode <- celldex::BlueprintEncodeData()
@@ -84,7 +84,7 @@ CellTypeAnnotator <- function(query.obj,
     }
   }
   if("sclearn" %in% tolower(method)){
-    requireNamespace("scLearn") || stop("Please install scLearn")
+    require("scLearn") || stop("Please install scLearn")
     message(Sys.time(), " sclearn cell type annotation")
     # cell quality control and rare cell type filtered and feature selection
     ref_filtered <- scLearn::Cell_type_filter(ref.data, ref.ann, min_cell_number = 10)
@@ -130,8 +130,8 @@ CellTypeAnnotator <- function(query.obj,
     }
   }
   if("scmap-cell" %in% tolower(method)){
-    requireNamespace("scmap") || stop("Please install scmap")
-    requireNamespace("SingleCellExperiment") || stop("Please install SingleCellExperiment")
+    require("scmap") || stop("Please install scmap")
+    require("SingleCellExperiment") || stop("Please install SingleCellExperiment")
     message(Sys.time(), " scmap-cell cell type annotation")
     set.seed(1)
     ref.sce <- SingleCellExperiment::SingleCellExperiment(assays = list(normcounts = as.matrix(ref.data),
@@ -161,8 +161,8 @@ CellTypeAnnotator <- function(query.obj,
     }
   }
   if("scmap-cluster" %in% tolower(method)){
-    requireNamespace("scmap") || stop("Please install scmap")
-    requireNamespace("SingleCellExperiment") || stop("Please install SingleCellExperiment")
+    require("scmap") || stop("Please install scmap")
+    require("SingleCellExperiment") || stop("Please install SingleCellExperiment")
     message(Sys.time(), " scmap-cluster cell type annotation")
     set.seed(1)
     ref.sce <- SingleCellExperiment::SingleCellExperiment(assays = list(normcounts = as.matrix(ref.data),

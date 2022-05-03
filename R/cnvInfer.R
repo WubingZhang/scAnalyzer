@@ -17,12 +17,12 @@
 #'
 #' @examples
 #'
-#' @import Seurat infercnv copykat
+#' @import Seurat infercnv
 #' @export
 cnvInfer <- function(SeuratObj,
                      ann.column = "seurat_clusters",
                      normal_groups = NULL,
-                     methods = c("copykat", "infercnv"),
+                     methods = c("infercnv", "copykat"),
                      outdir = "./",
                      gene_order_file = NULL){
 
