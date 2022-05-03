@@ -9,7 +9,8 @@ cnvInfer(
   SeuratObj,
   ann.column = "seurat_clusters",
   normal_groups = NULL,
-  methods = c("infercnv", "copykat"),
+  methods = c("infercnv"),
+  nthreads = 8,
   outdir = "./",
   gene_order_file = NULL
 )
@@ -22,6 +23,8 @@ cnvInfer(
 \item{normal_groups}{A vector specifying the groups of normal cells, which mush match the name shown in meta.data.}
 
 \item{methods}{copykat, infercnv, numbat}
+
+\item{nthreads}{An integer specifying the number of threads for running inferCNV}
 
 \item{outdir}{path to output intermediate results.}
 

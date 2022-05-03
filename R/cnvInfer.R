@@ -8,6 +8,7 @@
 #' @param ann.column An integer or a character specifying the cell cluster column in the seurat meta.data.
 #' @param normal_groups A vector specifying the groups of normal cells, which mush match the name shown in meta.data.
 #' @param methods copykat, infercnv, numbat
+#' @param nthreads An integer specifying the number of threads for running inferCNV
 #' @param outdir path to output intermediate results.
 #' @param gene_order_file path to the gene order file (required for infercnv); using geneorder_hg20 by default.
 #'
@@ -22,14 +23,14 @@
 cnvInfer <- function(SeuratObj,
                      ann.column = "seurat_clusters",
                      normal_groups = NULL,
-                     methods = c("infercnv", "copykat"),
+                     methods = c("infercnv"),
+                     nthreads = 8,
                      outdir = "./",
                      gene_order_file = NULL){
-
   if("copykat" %in% tolower(methods)){
     require(copykat)
     if(is.null(normal_groups) | is.null(ann.column)){
-      norm.cells <- subset(x = SeuratObj, subset = PTPRC > 3) %>% colnames()
+      norm.cells <- subset(x = SeuratObj, subset = EPCAM < 0.5) %>% colnames()
     }else{
       norm.cells <- rownames(SeuratObj@meta.data)[SeuratObj@meta.data[,ann.column] %in% normal_groups]
     }
@@ -52,52 +53,47 @@ cnvInfer <- function(SeuratObj,
 
   if("infercnv" %in% tolower(methods)){
     require(infercnv)
-    ann = SeuratObj@meta.data
-    ann = cbind(rownames(ann), ann[,ann.column])
-    write.table(ann, paste0(outdir, "/annotation_for_infercnv.txt"),
-                sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
-    if(is.null(gene_order_file)){
-      gene_order_file <- system.file("extdata", "geneorder_hg20.txt.gz", package="scAnalyzer")
-      gene_order_file <- gzfile(gene_order_file, "r")
-    }
-    infercnv_obj <- CreateInfercnvObject(raw_counts_matrix = as.matrix(SeuratObj@assays$RNA@counts),
-                                         gene_order_file = gene_order_file,
-                                         annotations_file=paste0(outdir, "/annotation_for_infercnv.txt"),
-                                         ref_group_names = normal_groups)
-    infercnv_obj <- infercnv::run(infercnv_obj, cutoff=0.1, out_dir=outdir, cluster_by_groups=TRUE, denoise=TRUE, HMM=TRUE)
-
     require(dplyr)
     require(EnvStats)
 
-    ref_file <- paste0(out_dir, '/infercnv.references.txt')
-    obs_file <- paste0(out_dir, '/infercnv.observations.txt')
-    ref <- read.csv(ref_file, header=T, sep = ' ', row.names = 1)
-    obs <- read.csv(obs_file, header=T, sep = ' ', row.names = 1)
-
-    ref_var <- mean(as.numeric(ref %>% summarise_if(is.numeric, var)))
-
-    df <- data.frame()
-    for (cell in colnames(observation)) {
-      observation_var <- var(observation[, cell])
-      log_p <- pf(observation_var / reference_var, nrow(observation) - 1, nrow(reference) - 1, lower.tail = FALSE, log.p = TRUE)
-
-      # Bonferroni adjusted p-value
-      adjusted_log_p <- min(log_p + log(ncol(observation)), 0)
-      if (adjusted_log_p <= log(0.05)) {
-        type <- "T"
-      } else {
-        type <- "N"
-      }
-
-      df <- rbind(df, data.frame("cell" = cell, "var" = observation_var, "negative_log_p" = -adjusted_log_p, "type" = type))
+    SeuratObj$Clusters <- as.character(SeuratObj@meta.data[, ann.column])
+    ann = data.frame(Cluster = SeuratObj$Clusters)
+    if(is.null(normal_groups)){
+      tmpdat <- FetchData(SeuratObj, vars = c("Clusters", "EPCAM", "CDH1")) %>%
+          mutate(Epi = EPCAM>0|CDH1>0) %>% group_by(Clusters) %>%
+          summarize(Fraction = sum(Epi)/length(Epi)) %>%arrange(Fraction)
+      normal_groups <- tmpdat$Clusters[tmpdat$Fraction<0.1]
+      if(length(normal_groups)<2) normal_groups = tmpdat$Clusters[1:2]
     }
-    row.names(df) <- df[["cell"]]
-    SeuratObj@meta.data$infercnv = df[rownames(SeuratObj@meta.data), "type"]
-    SeuratObj@meta.data$infercnv[is.na(SeuratObj@meta.data$infercnv)] <- "N"
+    if(is.null(gene_order_file)){
+      gene_order_file <- system.file("extdata", "geneorder_hg20.txt.gz", package="scAnalyzer")
+      gene_order_file <- read.table(gzfile(gene_order_file, "r"), header=FALSE,
+                                    row.names=1, sep="\t", check.names=FALSE)
+    }
+    infercnv_obj <- CreateInfercnvObject(raw_counts_matrix = GetAssayData(SeuratObj, "counts"),
+                                         gene_order_file = gene_order_file,
+                                         annotations_file = ann,
+                                         ref_group_names = normal_groups)
+    infercnv_obj <- infercnv::run(infercnv_obj, cutoff=0.1, out_dir=outdir,
+                                  num_threads = nthreads,
+                                  cluster_by_groups=TRUE, denoise=TRUE, HMM=TRUE)
 
-    ## Visualize the infercnv prediction
-    DimPlot(SeuratObj, group.by = "infercnv")
-
+    expr.data <- cbind(infercnv_obj@gene_order, infercnv_obj@expr.data)
+    expr.data$start <- floor(expr.data$start / 1e8)
+    expr.data <- aggregate(expr.data[,-(1:3)], by = list(chr = expr.data$chr, start = expr.data$start), mean)
+    rownames(expr.data) <- paste0(expr.data$chr, "_", expr.data$start)
+    expr.data <- expr.data[,-(1:2)]
+    ref_var <- mean(apply(expr.data[, unlist(infercnv_obj@reference_grouped_cell_indices)], 2, var))
+    pvals <- apply(expr.data, 2, function(x){
+      tmp <- varTest(x, alternative = "greater", sigma.squared = ref_var)
+      pchisq(tmp$statistic, tmp$parameters, ncp = 0, lower.tail = FALSE, log.p = FALSE)
+    })
+    Padj <- p.adjust(pvals, method = "BH")
+    results <- data.frame(CID = colnames(expr.data), InferCNV.Pval = pvals, InferCNV.FDR = Padj)
+    results$Infer.Tumor = "N"
+    results$Infer.Tumor[results$InferCNV.FDR<0.01] = "T"
+    SeuratObj@meta.data <- cbind(SeuratObj@meta.data, results[colnames(SeuratObj), 3:4])
+    saveRDS(SeuratObj, paste0(outdir, "SeuratObj_inferCNV.rds"))
   }
   if("numbat" %in% tolower(methods)){
     ## Add here
