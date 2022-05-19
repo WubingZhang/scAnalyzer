@@ -10,7 +10,7 @@ LazyData: true
 RoxygenNote: 7.1.2
 License: GPL (>=3)
 VignetteBuilder: knitr
-Depends: R (>= 4.1)
+Depends: R (>= 3.6)
 Imports: ggplot2, 
          dplyr
 Suggests: BiocStyle, 
