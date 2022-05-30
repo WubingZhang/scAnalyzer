@@ -77,26 +77,10 @@ cnvInfer <- function(SeuratObj,
     infercnv_obj <- infercnv::run(infercnv_obj, cutoff=0.1, out_dir=outdir,
                                   num_threads = nthreads,
                                   cluster_by_groups=TRUE, denoise=TRUE, HMM=TRUE)
-
-    expr.data <- cbind(infercnv_obj@gene_order, infercnv_obj@expr.data)
-    expr.data$start <- floor(expr.data$start / 1e8)
-    expr.data <- aggregate(expr.data[,-(1:3)], by = list(chr = expr.data$chr, start = expr.data$start), mean)
-    rownames(expr.data) <- paste0(expr.data$chr, "_", expr.data$start)
-    expr.data <- expr.data[,-(1:2)]
-    ref_var <- mean(apply(expr.data[, unlist(infercnv_obj@reference_grouped_cell_indices)], 2, var))
-    pvals <- apply(expr.data, 2, function(x){
-      tmp <- varTest(x, alternative = "greater", sigma.squared = ref_var)
-      pchisq(tmp$statistic, tmp$parameters, ncp = 0, lower.tail = FALSE, log.p = FALSE)
-    })
-    Padj <- p.adjust(pvals, method = "BH")
-    results <- data.frame(CID = colnames(expr.data), InferCNV.Pval = pvals, InferCNV.FDR = Padj)
-    results$Infer.Tumor = "N"
-    results$Infer.Tumor[results$InferCNV.FDR<0.01] = "T"
-    SeuratObj@meta.data <- cbind(SeuratObj@meta.data, results[colnames(SeuratObj), 3:4])
-    saveRDS(SeuratObj, paste0(outdir, "SeuratObj_inferCNV.rds"))
   }
   if("numbat" %in% tolower(methods)){
     ## Add here
   }
-  return(SeuratObj)
+  return(1)
 }
+

@@ -1,8 +1,8 @@
 #' Annotating cell types using SingleR
 #'
 #' @docType methods
-#' @name CellTypeAnnotator
-#' @rdname CellTypeAnnotator
+#' @name ScAnnotator
+#' @rdname ScAnnotator
 #'
 #' @param query.obj A seurat object for cell type annotation.
 #' @param clusters A character specifying the cluster column in meta.data.
@@ -10,6 +10,7 @@
 #' Should be one of singler, sclearn, scmap-cell, scmap-cluster, seurat
 #' @param ref.data A matrix like object specifying the reference data or a Seurat object.
 #' @param ref.ann A vector specifying the cell type annotation of the reference data.
+#' @param markers A list with Positive (markers$Positive) and Negative markers (markers$Negative) of cell types.
 #' @param plot A boolean indicating whether to save and visualize the prediction results.
 #' @param outdir Path to the output directory.
 #'
@@ -22,13 +23,14 @@
 #' @import Seurat SingleCellExperiment
 #' @export
 #'
-CellTypeAnnotator <- function(query.obj,
-                              clusters = "seurat_clusters",
-                              method = c("scmap-cell", "seurat"),
-                              ref.data = NULL,
-                              ref.ann = NULL,
-                              plot = TRUE,
-                              outdir = "./"){
+ScAnnotator <- function(query.obj,
+                        clusters = "seurat_clusters",
+                        method = c("seurat"),
+                        ref.data = NULL,
+                        ref.ann = NULL,
+                        markers = NULL,
+                        plot = TRUE,
+                        outdir = "./"){
   if(length(names(ref.ann))==0){ names(ref.ann) <- colnames(ref.data) }
   requireNamespace("Seurat") || stop("Please install Seurat")
 
@@ -186,6 +188,23 @@ CellTypeAnnotator <- function(query.obj,
     if(plot){
       saveRDS(scmapCluster_results, paste0(outdir, "/scmapCluster_assignment.rds"))
       ggsave(plot = p, paste0(outdir, "/UmapPlot_scmapCluster_Assign_", Sys.Date(), ".pdf"), width = 8, height = 6)
+    }
+  }
+
+  if("sctype" %in% tolower(method)){
+    message(Sys.time(), " ScType cell type annotation")
+    set.seed(1)
+
+    es.max = ScType(GetAssayData(query.obj, slot = "scale.data"), scaled = TRUE,
+                    gs = markers$Positive, gs2 = markers$Negative)
+    es.max$assign <- colnames(es.max)[unlist(apply(es.max, 1, which.max))]
+    colnames(es.max) <- paste0("ScType.", colnames(es.max))
+    query.obj <- AddMetaData(query.obj, metadata = es.max)
+    # save the prediction results
+    p <- DimPlot(query.obj, reduction = "umap", group.by = "ScType.assign", label=TRUE, label.size = 6)
+    if(plot){
+      saveRDS(es.max, paste0(outdir, "/ScType_assignment.rds"))
+      ggsave(plot = p, paste0(outdir, "/UmapPlot_ScType_Assign_", Sys.Date(), ".pdf"), width = 8, height = 6)
     }
   }
   return(query.obj)

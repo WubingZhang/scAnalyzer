@@ -10,32 +10,58 @@ scAnalyzer(
   project = NULL,
   analyses = c("qc", "doublet", "norm", "pca", "clustering"),
   norm.method = c("LogNormalize", "SCTransform"),
+  outdir = "",
   resolution = 0.5,
-  outdir = ""
+  min.cells = 3,
+  min.features = 200,
+  max.features = 8000,
+  percent.mt = NULL,
+  scale.factor = 10000,
+  nVarfeatures = 2000,
+  nPCs = NULL,
+  nPC.Variance = 0.8
 )
 }
 \arguments{
-\item{obj}{A matrix or data.frame of count table or a seurat object.}
+\item{obj}{A matrix or data.frame of count table or a Seurat object.}
 
-\item{project}{A character, specifying the name of the project, which will be used in output file names.}
+\item{project}{A character, specifying the name of the project (also prefix of outputs).}
 
-\item{analyses}{A character vector, specifying the type of analysis to perform, avaible analysis include qc,
-doublet, norm, pca, clustering, findmarker.}
+\item{analyses}{A character vector, specifying the type of analysis to perform,
+available analysis include qc, doublet, norm, pca, clustering.}
 
 \item{norm.method}{LogNormalize or SCTransform.}
 
-\item{resolution}{The resolution for clustering. 0.1 by default.}
-
 \item{outdir}{The path to output figures.}
+
+\item{resolution}{The resolution for clustering. 0.5 by default.}
+
+\item{min.cells}{Include features detected in at least this many cells.}
+
+\item{min.features}{Include cells with more than this many features are detected.}
+
+\item{max.features}{Include cells with less than this many features are detected.}
+
+\item{percent.mt}{Include cells with less than this fraction of mitochondrial gene expression.}
+
+\item{scale.factor}{Scale factor.}
+
+\item{nVarfeatures}{The number of variable genes for downstream analysis.}
+
+\item{nPCs}{The number of PCs.}
+
+\item{nPC.Variance}{At least this fraction of variance (80% by default) should be
+explained by the Principal components, required when nPCs is not specified.}
 }
 \value{
-A list a seurat object and markers for all clusters
+Seurat object
 }
 \description{
 Analysis pipeline for single cell RNA-seq data
 }
 \details{
-This pipeline takes count table as input, and performs data quality control, normalization, doublets removal (scDblFinder),
+This pipeline takes count table or seurat object as input, and
+performs data quality control, normalization, doublets removal (DoubletFinder),
 dimention reduction, cell clustering and identification of marker genes.
 }
 \examples{
