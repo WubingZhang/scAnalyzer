@@ -69,13 +69,13 @@ scAnalyzer <- function(obj, project = NULL,
       obj <- subset(obj, subset = percent.mt < percent.mt)
     }else{
       obj <- subset(obj, subset = percent.mt < 50)
-      if(sum(obj$percent.mt>5)/ncol(obj)<0.2){
+      if(sum(obj$percent.mt>5)/ncol(obj)<0.15){
         obj <- subset(obj, subset = percent.mt < 5)
-      }else if(sum(obj$percent.mt>10)/ncol(obj)<0.2){
+      }else if(sum(obj$percent.mt>10)/ncol(obj)<0.15){
         if(mean(obj$percent.mt)+1.5*sd(obj$percent.mt)<10){
           obj <- subset(obj, subset = percent.mt < mean(percent.mt) + 1.5*sd(percent.mt))
         }else obj <- subset(obj, subset = percent.mt < 10)
-      }else if(sum(obj$percent.mt>20)/ncol(obj)<0.2){
+      }else if(sum(obj$percent.mt>20)/ncol(obj)<0.15){
         if(mean(obj$percent.mt)+1.5*sd(obj$percent.mt)<20){
           obj <- subset(obj, subset = percent.mt < mean(percent.mt) + 1.5*sd(percent.mt))
         }else obj <- subset(obj, subset = percent.mt < 20)
