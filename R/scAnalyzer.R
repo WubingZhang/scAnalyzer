@@ -15,6 +15,7 @@
 #' @param min.features Include cells with more than this many features are detected.
 #' @param max.features Include cells with less than this many features are detected.
 #' @param percent.mt Include cells with less than this fraction of mitochondrial gene expression.
+#' @param subset.singlet Remove doublets from the data by subseting the singlets.
 #' @param scale.factor Scale factor.
 #' @param nVarfeatures The number of variable genes for downstream analysis.
 #' @param nPCs The number of PCs.
@@ -43,6 +44,7 @@ scAnalyzer <- function(obj, project = NULL,
                        min.features = 200,
                        max.features = 8000,
                        percent.mt = NULL,
+                       subset.singlet = TRUE,
                        scale.factor = 1e4,
                        nVarfeatures = 2000,
                        nPCs = NULL,
@@ -96,7 +98,7 @@ scAnalyzer <- function(obj, project = NULL,
     #### Remove doublets ####
     if("doublet" %in% tolower(analyses)){
       requireNamespace("DoubletFinder") || stop("Please install DoubletFinder")
-      message(Sys.time(), " Remove doublets ...")
+      message(Sys.time(), " Predicting doublets using DoubletFinder ...")
 
       # Identify cell clusters
       if(tolower(norm.method[1])=="sctransform"){
@@ -137,7 +139,7 @@ scAnalyzer <- function(obj, project = NULL,
         p_nfeat = FeaturePlot(obj, features = c("nCount_RNA", "DoubletFinder"))
         ggsave(plot = p_nfeat, paste0(outdir, "/FeaturePlot_nCount_Doublet_", Sys.Date(), ".pdf"), width = 7, height = 4)
       }
-      obj <- subset(obj, subset = DF.class=="Singlet")
+      if(subset.singlet) obj <- subset(obj, subset = DF.class=="Singlet")
     }
   }
 
@@ -193,23 +195,6 @@ scAnalyzer <- function(obj, project = NULL,
       ggsave(plot = p_umap, paste0(outdir, "/UmapPlot_", Sys.Date(), ".pdf"), width = 6, height = 5)
     }
   }
-#   #### Identifying DE genes ####
-#   markers <- NULL
-#   if("findmarker" %in% tolower(analyses)){
-#     message(Sys.time(), " Differential expression analysis ...")
-#     markers<- presto::wilcoxauc(obj, 'seurat_clusters', assay = 'data')
-#     top5 <- top_markers(markers, n = 5, auc_min = .6, pct_in_min = 60)[,-1] %>% unlist() %>% unique()
-#     top10 <- top_markers(markers, n = 10, auc_min = .6, pct_in_min = 60)[,-1] %>% unlist() %>% unique()
-#     if(dir.exists(outdir)){
-#       saveRDS(markers, paste0(outdir, "/Seurat_", project, "_AllMarkers_", Sys.Date(), ".rds"))
-#       p1 <- DoHeatmap(obj, features = top5) + NoLegend()
-#       ggsave(plot = p1, paste0(outdir, "/Heatmap_Markers_top5_", Sys.Date(), ".pdf"),
-#              width = 8, height = 4+length(top5)/10)
-#       p2 <- DoHeatmap(obj, features = top10) + NoLegend()
-#       ggsave(plot = p1, paste0(outdir, "/Heatmap_Markers_top10_", Sys.Date(), ".pdf"),
-#              width = 8, height = 4+length(top10)/10)
-#     }
-#   }
 
   if(dir.exists(outdir)){
     saveRDS(obj, paste0(outdir, "/", project, "_scRNA_obj.rds"))

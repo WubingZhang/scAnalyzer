@@ -15,17 +15,20 @@ ScType <- function(query.obj, markers){
                         gs = markers$Positive, gs2 = markers$Negative)
   # es.max$assign <- colnames(es.max)[unlist(apply(es.max, 1, which.max))]
   colnames(es.max) <- paste0("ScType.", colnames(es.max))
+  rownames(es.max) <- Cells(query.obj)
   query.obj <- AddMetaData(query.obj, metadata = es.max)
   cL_results = do.call("rbind", lapply(as.character(unique(query.obj$seurat_clusters)), function(cl){
     cells <- Cells(query.obj)[as.character(query.obj$seurat_clusters)==cl]
     tmp <- as.matrix(es.max[match(cells, rownames(es.max)), ])
     es.max.cl = colSums(tmp)
-    c(seurat_clusters = cl, es.max.cl)
+    c(seurat_clusters = cl, ncells = length(cells), es.max.cl)
   }))
   cL_results <- as.data.frame(cL_results)
   rownames(cL_results) <- cL_results$seurat_clusters
   cL_results <- cL_results[, -1]
-  cL_results$assign <- gsub("ScType.", "", colnames(cL_results))[unlist(apply(cL_results, 1, which.max))]
+  cL_results$assign <- gsub("ScType.", "", colnames(cL_results))[unlist(apply(cL_results[,-1], 1, which.max))+1]
+  cL_results$score <- unlist(apply(cL_results[,-1], 1, max))
+  cL_results$assign[cL_results$score < cL_results$ncells/4] <- "Unknown"
 
   idx <- match(as.character(query.obj$seurat_clusters), rownames(cL_results))
   query.obj$ScType.assign <- cL_results[idx, "assign"]

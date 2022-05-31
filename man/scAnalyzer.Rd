@@ -16,6 +16,7 @@ scAnalyzer(
   min.features = 200,
   max.features = 8000,
   percent.mt = NULL,
+  subset.singlet = TRUE,
   scale.factor = 10000,
   nVarfeatures = 2000,
   nPCs = NULL,
@@ -43,6 +44,8 @@ available analysis include qc, doublet, norm, pca, clustering.}
 \item{max.features}{Include cells with less than this many features are detected.}
 
 \item{percent.mt}{Include cells with less than this fraction of mitochondrial gene expression.}
+
+\item{subset.singlet}{Remove doublets from the data by subseting the singlets.}
 
 \item{scale.factor}{Scale factor.}
 
