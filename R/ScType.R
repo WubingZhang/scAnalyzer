@@ -1,7 +1,41 @@
-#' ScType: calculate ScType scores and assign cell types
+#' Incorporate ScType predictions to Seurat object
 #' @docType methods
 #' @name ScType
 #' @rdname ScType
+#'
+#' @param query.obj A seurat object for cell type annotation.
+#' @param markers A list with Positive (markers$Positive) and Negative markers (markers$Negative) of cell types.
+#'
+#' @return A seurat object with ScType results attached to meta.data.
+#' @export
+ScType <- function(query.obj, markers){
+  message(Sys.time(), " ScType cell type annotation")
+  set.seed(1)
+  es.max = sctype_score(GetAssayData(query.obj, slot = "scale.data"), scaled = TRUE,
+                        gs = markers$Positive, gs2 = markers$Negative)
+  # es.max$assign <- colnames(es.max)[unlist(apply(es.max, 1, which.max))]
+  colnames(es.max) <- paste0("ScType.", colnames(es.max))
+  query.obj <- AddMetaData(query.obj, metadata = es.max)
+  cL_results = do.call("rbind", lapply(as.character(unique(query.obj$seurat_clusters)), function(cl){
+    cells <- Cells(query.obj)[as.character(query.obj$seurat_clusters)==cl]
+    tmp <- as.matrix(es.max[match(cells, rownames(es.max)), ])
+    es.max.cl = colSums(tmp)
+    c(seurat_clusters = cl, es.max.cl)
+  }))
+  cL_results <- as.data.frame(cL_results)
+  rownames(cL_results) <- cL_results$seurat_clusters
+  cL_results <- cL_results[, -1]
+  cL_results$assign <- gsub("ScType.", "", colnames(cL_results))[unlist(apply(cL_results, 1, which.max))]
+
+  idx <- match(as.character(query.obj$seurat_clusters), rownames(cL_results))
+  query.obj$ScType.assign <- cL_results[idx, "assign"]
+  return(query.obj)
+}
+
+#' sctype_score: calculate ScType scores and assign cell types
+#' @docType methods
+#' @name sctype_score
+#' @rdname sctype_score
 #'
 #' @param scRNAseqData - input scRNA-seq matrix (rownames - genes, column names - cells),
 #' @param scale - indicates whether the matrix is scaled (TRUE by default)
@@ -11,9 +45,8 @@
 #' @description GNU General Public License v3.0 (https://github.com/IanevskiAleksandr/sc-type/blob/master/LICENSE)
 #' @author Aleksandr Ianevski <aleksandr.ianevski@helsinki.fi>, June 2021
 #' @return A data frame with ScType scores for each cell type.
-#' @export
 
-ScType <- function(scRNAseqData, scaled = !0, gs, gs2 = NULL, gene_names_to_uppercase = !0, ...){
+sctype_score <- function(scRNAseqData, scaled = !0, gs, gs2 = NULL, gene_names_to_uppercase = !0, ...){
 
   # marker sensitivity
   marker_stat = sort(table(unlist(gs)), decreasing = T);

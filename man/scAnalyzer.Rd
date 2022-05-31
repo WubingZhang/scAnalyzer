@@ -19,7 +19,7 @@ scAnalyzer(
   scale.factor = 10000,
   nVarfeatures = 2000,
   nPCs = NULL,
-  nPC.Variance = 0.8
+  PC.Variance = 0.8
 )
 }
 \arguments{
@@ -50,7 +50,7 @@ available analysis include qc, doublet, norm, pca, clustering.}
 
 \item{nPCs}{The number of PCs.}
 
-\item{nPC.Variance}{At least this fraction of variance (80% by default) should be
+\item{PC.Variance}{At least this fraction of variance (80% by default) should be
 explained by the Principal components, required when nPCs is not specified.}
 }
 \value{

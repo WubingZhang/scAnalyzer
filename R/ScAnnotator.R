@@ -36,11 +36,13 @@ ScAnnotator <- function(query.obj,
 
   #### Retrieve reference data ####
   ref.obj <- NULL
-  if(class(ref.data) == "Seurat"){
-    ref.obj <- ref.data
-    ref.data <- as.matrix(GetAssayData(object = ref.obj, slot = "data"))
+  if(!is.null(ref.data)){
+    if(class(ref.data) == "Seurat"){
+      ref.obj <- ref.data
+      ref.data <- as.matrix(GetAssayData(object = ref.obj, slot = "data"))
+    }
+    ref.data <- as.matrix(ref.data)
   }
-  ref.data <- as.matrix(ref.data)
 
   #### SingleR Cell type annotation ####
   if("singler" %in% tolower(method)){
@@ -194,27 +196,7 @@ ScAnnotator <- function(query.obj,
   if("sctype" %in% tolower(method)){
     message(Sys.time(), " ScType cell type annotation")
     set.seed(1)
-
-    es.max = ScType(GetAssayData(query.obj, slot = "scale.data"), scaled = TRUE,
-                    gs = markers$Positive, gs2 = markers$Negative)
-    # es.max$assign <- colnames(es.max)[unlist(apply(es.max, 1, which.max))]
-    colnames(es.max) <- paste0("ScType.", colnames(es.max))
-    query.obj <- AddMetaData(query.obj, metadata = es.max)
-    cL_results = do.call("rbind", lapply(as.character(unique(query.obj$seurat_clusters)), function(cl){
-      cells <- Cells(query.obj)[as.character(query.obj$seurat_clusters)==cl]
-      tmp <- as.matrix(es.max[match(cells, rownames(es.max)), ])
-      es.max.cl = colSums(tmp)
-      c(seurat_clusters = cl, es.max.cl)
-    }))
-    cL_results <- as.data.frame(cL_results)
-    rownames(cL_results) <- cL_results$seurat_clusters
-    cL_results <- cL_results[, -1]
-    cL_results$assign <- colnames(cL_results)[unlist(apply(cL_results, 1, which.max))]
-    colnames(cL_results) <- paste0("ScType.", colnames(cL_results))
-
-    idx <- match(as.character(query.obj$seurat_clusters), rownames(cL_results))
-    query.obj$ScType.assign <- cL_results[idx, "ScType.assign"]
-
+    query.obj = ScType(query.obj, markers)
     # save the prediction results
     p <- DimPlot(query.obj, reduction = "umap", group.by = "ScType.assign", label=TRUE, label.size = 6)
     if(plot){

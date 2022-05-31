@@ -18,7 +18,7 @@
 #' @param scale.factor Scale factor.
 #' @param nVarfeatures The number of variable genes for downstream analysis.
 #' @param nPCs The number of PCs.
-#' @param nPC.Variance At least this fraction of variance (80% by default) should be
+#' @param PC.Variance At least this fraction of variance (80% by default) should be
 #' explained by the Principal components, required when nPCs is not specified.
 #'
 #' @author Wubing Zhang
@@ -46,7 +46,7 @@ scAnalyzer <- function(obj, project = NULL,
                        scale.factor = 1e4,
                        nVarfeatures = 2000,
                        nPCs = NULL,
-                       nPC.Variance = 0.8){
+                       PC.Variance = 0.8){
   requireNamespace("Seurat") || stop("Please install Seurat")
   requireNamespace("ggplot2") || stop("Please install ggplot2")
   requireNamespace("dplyr") || stop("Please install dplyr")
@@ -176,12 +176,12 @@ scAnalyzer <- function(obj, project = NULL,
   #### Clustering analysis ####
   if("clustering" %in% tolower(analyses)){
     message(Sys.time(), " Clustering analysis ...")
-    if(is.null(nPC)){
+    if(is.null(nPCs)){
       # Selecting PCs capturing more than 80% variance
       vars = Stdev(obj, reduction = "pca")^2
-      PCs = seq(1, which(cumsum(vars / sum(vars)) > nPC.Variance)[1])
+      PCs = seq(1, which(cumsum(vars / sum(vars)) > PC.Variance)[1])
     }else{
-      PCs = seq(1, nPC)
+      PCs = seq(1, nPCs)
     }
     message("# of PCs for downstream analysis: ", max(PCs))
     obj <- FindNeighbors(object = obj, dims = PCs, verbose = FALSE)

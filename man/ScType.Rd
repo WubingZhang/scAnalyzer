@@ -3,32 +3,18 @@
 \docType{methods}
 \name{ScType}
 \alias{ScType}
-\title{ScType: calculate ScType scores and assign cell types}
+\title{Incorporate ScType predictions to Seurat object}
 \usage{
-ScType(
-  scRNAseqData,
-  scaled = !0,
-  gs,
-  gs2 = NULL,
-  gene_names_to_uppercase = !0,
-  ...
-)
+ScType(query.obj, markers)
 }
 \arguments{
-\item{scRNAseqData}{- input scRNA-seq matrix (rownames - genes, column names - cells),}
+\item{query.obj}{A seurat object for cell type annotation.}
 
-\item{gs}{- list of gene sets positively expressed in the cell type}
-
-\item{gs2}{- list of gene sets that should not be expressed in the cell type (NULL if not applicable)}
-
-\item{scale}{- indicates whether the matrix is scaled (TRUE by default)}
+\item{markers}{A list with Positive (markers$Positive) and Negative markers (markers$Negative) of cell types.}
 }
 \value{
-A data frame with ScType scores for each cell type.
+A seurat object with ScType results attached to meta.data.
 }
 \description{
-GNU General Public License v3.0 (https://github.com/IanevskiAleksandr/sc-type/blob/master/LICENSE)
-}
-\author{
-Aleksandr Ianevski <aleksandr.ianevski@helsinki.fi>, June 2021
+Incorporate ScType predictions to Seurat object
 }
