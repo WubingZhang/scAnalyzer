@@ -20,7 +20,7 @@ scAnalyzer(
   scale.factor = 10000,
   nVarfeatures = 2000,
   nPCs = NULL,
-  PC.Variance = 0.8
+  PC.Variance = 0.85
 )
 }
 \arguments{

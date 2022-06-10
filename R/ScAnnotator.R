@@ -1,11 +1,11 @@
-#' Annotating cell types using SingleR
+#' Automatic annotation of cell types
 #'
 #' @docType methods
-#' @name ScAnnotator
-#' @rdname ScAnnotator
+#' @name scAnnotator
+#' @rdname scAnnotator
 #'
 #' @param query.obj A seurat object for cell type annotation.
-#' @param clusters A character specifying the cluster column in meta.data.
+#' @param group.by A character specifying the cluster column in meta.data.
 #' @param method A vector specifying the cell type annotation methods.
 #' Should be one of singler, sclearn, scmap-cell, scmap-cluster, seurat
 #' @param ref.data A matrix like object specifying the reference data or a Seurat object.
@@ -23,8 +23,8 @@
 #' @import Seurat SingleCellExperiment
 #' @export
 #'
-ScAnnotator <- function(query.obj,
-                        clusters = "seurat_clusters",
+scAnnotator <- function(query.obj,
+                        group.by = "seurat_clusters",
                         method = c("seurat"),
                         ref.data = NULL,
                         ref.ann = NULL,
@@ -65,20 +65,20 @@ ScAnnotator <- function(query.obj,
 
       ## Annotation
       pred.singleR <- suppressWarnings(
-        SingleR::SingleR(test = query.sce, clusters = query.obj[[]][[clusters]], ref = combined,
+        SingleR::SingleR(test = query.sce, clusters = query.obj[[]][[group.by]], ref = combined,
                 labels = combined$label.main, de.method = "wilcox")
         )
-      query.obj[["singleR.assign"]] <- pred.singleR$labels[match(query.obj[[]][[clusters]], rownames(pred.singleR))]
-      query.obj[["singleR.score1"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[clusters]], rownames(pred.singleR)), 1]
-      query.obj[["singleR.score2"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[clusters]], rownames(pred.singleR)), 2]
+      query.obj[["singleR.assign"]] <- pred.singleR$labels[match(query.obj[[]][[group.by]], rownames(pred.singleR))]
+      query.obj[["singleR.score1"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[group.by]], rownames(pred.singleR)), 1]
+      query.obj[["singleR.score2"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[group.by]], rownames(pred.singleR)), 2]
       query.obj[["singleR.assign"]][query.obj[["singleR.score1"]]<0.3] = "Other"
     }else{
       pred.singleR <- suppressWarnings(
-        SingleR::SingleR(test = query.sce, clusters = query.obj[[]][[clusters]],
+        SingleR::SingleR(test = query.sce, clusters = query.obj[[]][[group.by]],
                          ref = ref.data, labels = ref.ann, de.method = "wilcox"))
-      query.obj[["singleR.assign"]] <- pred.singleR$labels[match(query.obj[[]][[clusters]], rownames(pred.singleR))]
-      query.obj[["singleR.score1"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[clusters]], rownames(pred.singleR)), 1]
-      query.obj[["singleR.score2"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[clusters]], rownames(pred.singleR)), 2]
+      query.obj[["singleR.assign"]] <- pred.singleR$labels[match(query.obj[[]][[group.by]], rownames(pred.singleR))]
+      query.obj[["singleR.score1"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[group.by]], rownames(pred.singleR)), 1]
+      query.obj[["singleR.score2"]] <- pred.singleR$tuning.scores[match(query.obj[[]][[group.by]], rownames(pred.singleR)), 2]
       query.obj[["singleR.assign"]][query.obj[["singleR.score1"]]<0.3] = "Other"
     }
     p <- DimPlot(query.obj, reduction = "umap", group.by = "singleR.assign", label=TRUE, label.size = 6)
@@ -192,7 +192,6 @@ ScAnnotator <- function(query.obj,
       ggsave(plot = p, paste0(outdir, "/UmapPlot_scmapCluster_Assign_", Sys.Date(), ".pdf"), width = 8, height = 6)
     }
   }
-
   if("sctype" %in% tolower(method)){
     message(Sys.time(), " ScType cell type annotation")
     set.seed(1)

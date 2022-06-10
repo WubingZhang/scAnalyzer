@@ -7,7 +7,7 @@
 \usage{
 cnvInfer(
   SeuratObj,
-  ann.column = "seurat_clusters",
+  group.by = "seurat_clusters",
   normal_groups = NULL,
   methods = c("infercnv"),
   nthreads = 8,
@@ -18,7 +18,7 @@ cnvInfer(
 \arguments{
 \item{SeuratObj}{A seurat object including count matrix and cell cluster annotation.}
 
-\item{ann.column}{An integer or a character specifying the cell cluster column in the seurat meta.data.}
+\item{group.by}{An integer or a character specifying the cell cluster column in the seurat meta.data.}
 
 \item{normal_groups}{A vector specifying the groups of normal cells, which mush match the name shown in meta.data.}
 

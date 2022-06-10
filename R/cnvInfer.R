@@ -5,7 +5,7 @@
 #' @rdname cnvInfer
 #'
 #' @param SeuratObj A seurat object including count matrix and cell cluster annotation.
-#' @param ann.column An integer or a character specifying the cell cluster column in the seurat meta.data.
+#' @param group.by An integer or a character specifying the cell cluster column in the seurat meta.data.
 #' @param normal_groups A vector specifying the groups of normal cells, which mush match the name shown in meta.data.
 #' @param methods copykat, infercnv, numbat
 #' @param nthreads An integer specifying the number of threads for running inferCNV
@@ -21,7 +21,7 @@
 #' @import Seurat infercnv
 #' @export
 cnvInfer <- function(SeuratObj,
-                     ann.column = "seurat_clusters",
+                     group.by = "seurat_clusters",
                      normal_groups = NULL,
                      methods = c("infercnv"),
                      nthreads = 8,
@@ -29,10 +29,10 @@ cnvInfer <- function(SeuratObj,
                      gene_order_file = NULL){
   if("copykat" %in% tolower(methods)){
     require(copykat)
-    if(is.null(normal_groups) | is.null(ann.column)){
+    if(is.null(normal_groups) | is.null(group.by)){
       norm.cells <- subset(x = SeuratObj, subset = EPCAM < 0.5) %>% colnames()
     }else{
-      norm.cells <- rownames(SeuratObj@meta.data)[SeuratObj@meta.data[,ann.column] %in% normal_groups]
+      norm.cells <- rownames(SeuratObj@meta.data)[SeuratObj@meta.data[,group.by] %in% normal_groups]
     }
     if(length(norm.cells)<10){
       warning("Too few specified normal cells !")
@@ -56,7 +56,7 @@ cnvInfer <- function(SeuratObj,
     require(dplyr)
     require(EnvStats)
 
-    SeuratObj$Clusters <- as.character(SeuratObj@meta.data[, ann.column])
+    SeuratObj$Clusters <- as.character(SeuratObj@meta.data[, group.by])
     ann = data.frame(Cluster = SeuratObj$Clusters)
     if(is.null(normal_groups)){
       tmpdat <- FetchData(SeuratObj, vars = c("Clusters", "EPCAM", "CDH1")) %>%

@@ -48,7 +48,7 @@ scAnalyzer <- function(obj, project = NULL,
                        scale.factor = 1e4,
                        nVarfeatures = 2000,
                        nPCs = NULL,
-                       PC.Variance = 0.8){
+                       PC.Variance = 0.85){
   requireNamespace("Seurat") || stop("Please install Seurat")
   requireNamespace("ggplot2") || stop("Please install ggplot2")
   requireNamespace("dplyr") || stop("Please install dplyr")

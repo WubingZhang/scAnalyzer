@@ -21,7 +21,7 @@ ScType <- function(query.obj, markers){
     cells <- Cells(query.obj)[as.character(query.obj$seurat_clusters)==cl]
     tmp <- as.matrix(es.max[match(cells, rownames(es.max)), ])
     es.max.cl = colSums(tmp)
-    c(seurat_clusters = cl, ncells = length(cells), es.max.cl)
+    c(seurat_clusters = as.integer(cl), ncells = length(cells), es.max.cl)
   }))
   cL_results <- as.data.frame(cL_results)
   rownames(cL_results) <- cL_results$seurat_clusters
