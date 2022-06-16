@@ -62,7 +62,7 @@ scAnnotator.SingleR <- function(query.obj, group.by = "seurat_clusters", ref.dat
   ## Annotation
   vargenes <- VariableFeatures(query.obj)
   pred.singleR <- suppressWarnings(
-    SingleR::SingleR(test = as.matrix(GetAssayData(query.obj, slot = "data"))[vargenes,],
+    SingleR::SingleR(test = GetAssayData(query.obj, slot = "data")[vargenes,],
                      clusters = query.obj[[]][[group.by]],
                      ref = ref.data, labels = ref.ann, de.method = "wilcox")
   )

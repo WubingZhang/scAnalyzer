@@ -7,8 +7,8 @@
 \usage{
 scNormalize(
   counts,
-  norm.method = c("LogNormalize", "SCTransform", "downsample", "quminorm", "census"),
-  mc.cores = 2,
+  norm.method = c("LogNormalize", "SCT", "downsample", "quminorm", "census"),
+  mc.cores = 4,
   fraction = 0.85
 )
 }
